@@ -1,0 +1,31 @@
+<div id="dashboard-page" class="page active">
+    <div class="dashboard-sidebar">
+        <h1>YAGYA</h1>
+        <nav class="dashboard-nav">
+            <a href="/" data-navigo class="active">Tests</a>
+            <a href="/bookmarks" data-navigo class="disabled">Bookmarks (coming soon)</a>
+            <a href="/analytics" data-navigo class="disabled">Analytics (coming soon)</a>
+        </nav>
+    </div>
+    <div class="dashboard-main">
+        <header class="dashboard-header">
+            <h2>Test Dashboard</h2>
+            <div class="dashboard-actions">
+                <button id="load-analysis-btn">Load & Review Saved Test</button>
+                <input type="file" id="analysis-file-input" style="display: none;" accept=".json">
+            </div>
+        </header>
+        <main>
+            <div class="test-list-container">
+                <div class="test-list-header">
+                    <span>Test Title</span>
+                    <span>Date</span>
+                    <span>Status</span>
+                    <span>Actions</span>
+                </div>
+                <div id="test-list">
+                    </div>
+            </div>
+        </main>
+    </div>
+</div>
