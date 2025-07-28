@@ -1,11 +1,9 @@
-// This is a big file! It contains all the logic from the original index.html
-// for running a test, showing the summary, calculating results, and analyzing answers.
+// FILE: js/pages/test.js
 
 // Helper function to load a script dynamically
 const loadScript = (src) => {
     return new Promise((resolve, reject) => {
-        const existingScript = document.querySelector(`script[src="${src}"]`);
-        if (existingScript) {
+        if (document.querySelector(`script[src="${src}"]`)) {
             resolve();
             return;
         }
@@ -13,36 +11,35 @@ const loadScript = (src) => {
         script.src = src;
         script.onload = () => resolve();
         script.onerror = () => reject(new Error(`Script load error for ${src}`));
-        document.body.appendChild(script);
+        document.head.appendChild(script);
     });
 };
 
-// The main object for the Test page
+// Helper function to clean data before saving to Firebase.
+const sanitizeForFirebase = (obj) => {
+    return JSON.parse(JSON.stringify(obj, (key, value) => {
+        return (value === undefined) ? null : value;
+    }));
+};
+
 const Test = {
-    // --- STATE ---
+    theme: 'light-mode', // <-- ADD THIS LINE
     state: {
-        appMode: 'test', 
         currentTest: null,
         allQuestions: [],
         userProgress: [],
-        finalAnalysis: null, // To store the complete analysis object
         timerInterval: null,
         totalDurationInSeconds: null,
         currentQuestionIndex: 0,
         currentSubject: 'Physics',
+        timeSpentOnCurrentQuestionStart: null,
     },
-
-    // --- DOM ELEMENTS ---
     elements: {},
-
-    // --- RENDER METHOD ---
     render: async () => {
-        const response = await fetch('/pages/test.html');
-        const html = await response.text();
-        return html;
+        const response = await fetch('pages/test.html');
+        if (!response.ok) throw new Error('Failed to fetch test.html');
+        return await response.text();
     },
-
-    // --- MAIN LOGIC (RUNS AFTER RENDER) ---
     after_render: async (id) => {
         console.log(`Test page rendered for test ID: ${id}`);
         
@@ -53,10 +50,10 @@ const Test = {
         }
 
         try {
-            await loadScript(`/${Test.state.currentTest.questionsFile}`);
+            await loadScript(Test.state.currentTest.questionsFile);
             if (typeof testQuestions === 'undefined') throw new Error('testQuestions variable not found in script.');
             
-            Test.state.allQuestions = testQuestions;
+            Test.state.allQuestions = JSON.parse(JSON.stringify(testQuestions));
             Test.showInstructions();
 
         } catch (error) {
@@ -65,21 +62,18 @@ const Test = {
             window.router.navigate('/');
         }
     },
-    
-    // --- PAGE/VIEW MANAGEMENT ---
     navigateToView(viewName) {
-        const views = ['instructions-page', 'test-page', 'summary-page', 'results-page', 'analysis-dashboard-page'];
+        const views = ['instructions-page', 'test-page', 'summary-page'];
         views.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.classList.remove('active');
+            if (el) el.style.display = 'none';
         });
 
         const targetView = document.getElementById(viewName);
-        if (targetView) targetView.classList.add('active');
+        if (targetView) targetView.style.display = 'flex';
 
         document.body.className = (viewName === 'test-page') ? 'light-mode' : 'dark-mode';
     },
-
     showInstructions() {
         const instructionsPage = document.getElementById('instructions-page');
         const test = Test.state.currentTest;
@@ -89,7 +83,7 @@ const Test = {
                 <h1>General Instructions for ${test.title}</h1>
                 <p>1. Total duration for the test is <strong>${test.duration} minutes</strong>.</p>
                 <p>2. Marking scheme: <strong>+${test.marks.correct}</strong> for correct, <strong>${test.marks.incorrect}</strong> for incorrect.</p>
-                <div class.instructions-buttons" style="margin-top: 30px;">
+                <div class="instructions-buttons">
                     <button id="back-to-dashboard-btn">Back</button>
                     <button id="start-test-btn-from-instructions">I am ready to begin</button>
                 </div>
@@ -100,11 +94,9 @@ const Test = {
         
         Test.navigateToView('instructions-page');
     },
-    
-    // --- TEST LIFECYCLE ---
     startTest() {
-        Test.state.appMode = 'test';
         Test.state.totalDurationInSeconds = Test.state.currentTest.duration * 60;
+        
 
         Test.state.userProgress = Test.state.allQuestions.map((q, index) => ({
             index,
@@ -116,18 +108,23 @@ const Test = {
         }));
 
         Test.cacheDOMElements();
+        Test.elements.testName.textContent = Test.state.currentTest.title;
         Test.bindEvents();
-        Test.wrapScrollableContent(); // Important for scrolling fix
+        Test.wrapScrollableContent(); 
         Test.buildQuestionIndex();
         Test.startTimer();
         Test.loadQuestion(0);
         Test.navigateToView('test-page');
     },
-
-    finishTest() {
+    async finishTest() {
         clearInterval(Test.state.timerInterval);
         Test.state.timerInterval = null;
         
+        Test.recordTimeOnCurrentQuestion();
+
+        const appContainer = document.getElementById('app-container');
+        appContainer.innerHTML = '<div class="loading-spinner"></div><h2>Calculating and saving results...</h2>';
+
         const results = {
             totalScore: 0,
             totalMaxMarks: 0,
@@ -143,14 +140,13 @@ const Test = {
 
         Test.state.userProgress.forEach((p, i) => {
             const q = Test.state.allQuestions[i];
+            const hasAnswered = p.status === 'answered' || p.status === 'answered-marked';
             const section = results.sections[q.subject];
             const marks = q.marks;
 
             results.totalMaxMarks += marks.correct;
             section.total++;
             section.maxMarks += marks.correct;
-
-            const hasAnswered = p.status === 'answered' || p.status === 'answered-marked';
             
             if (hasAnswered) {
                 if (String(p.response).trim() === String(q.answer).trim()) {
@@ -172,139 +168,189 @@ const Test = {
                 section.unattempted++;
             }
         });
-        
-        Test.state.finalAnalysis = { results, userProgress: Test.state.userProgress, allQuestions: Test.state.allQuestions, testTitle: Test.state.currentTest.title };
-        Test.generateResults(Test.state.finalAnalysis);
-        Test.navigateToView('results-page');
-    },
 
-    // --- TIMER ---
+        const finalAnalysis = { 
+            version: "YAGYA-v1.0",
+            testId: Test.state.currentTest.id,
+            testTitle: Test.state.currentTest.title,
+            attemptedOn: new Date().toISOString(),
+            results: results, 
+            userProgress: Test.state.userProgress, 
+            allQuestions: Test.state.allQuestions,
+        };
+        
+        try {
+            if (!window.db) throw new Error("Firestore (window.db) not available");
+            
+            const cleanData = sanitizeForFirebase(finalAnalysis);
+            const docRef = await window.db.collection("testResults").add(cleanData);
+            
+            console.log("%cSUCCESS: Test result saved with ID: " + docRef.id, "color: green; font-weight: bold;");
+            
+            window.router.navigate(`/analysis/${docRef.id}`);
+
+        } catch (e) {
+            console.error("%cERROR: Failed to save result to Firestore:", "color: red; font-weight: bold;", e);
+            alert("There was an error saving your results. Please check the console.");
+            window.router.navigate('/');
+        }
+    },
     startTimer() {
         const timer = () => {
+            if (Test.state.totalDurationInSeconds <= 0) {
+                clearInterval(Test.state.timerInterval);
+                alert("Time is up!");
+                Test.finishTest();
+                return;
+            }
             Test.state.totalDurationInSeconds--;
             const h = String(Math.floor(Test.state.totalDurationInSeconds / 3600)).padStart(2, '0');
             const m = String(Math.floor((Test.state.totalDurationInSeconds % 3600) / 60)).padStart(2, '0');
             const s = String(Test.state.totalDurationInSeconds % 60).padStart(2, '0');
-            Test.elements.timerDisplay.textContent = `${h}:${m}:${s}`;
-            if (Test.state.totalDurationInSeconds <= 0) {
-                alert("Time is up!");
-                Test.finishTest();
-            }
+            if(Test.elements.timerDisplay) Test.elements.timerDisplay.textContent = `${h}:${m}:${s}`;
         };
         timer();
         Test.state.timerInterval = setInterval(timer, 1000);
     },
-    
-    // --- QUESTION HANDLING ---
+    recordTimeOnCurrentQuestion() {
+        if (Test.state.timeSpentOnCurrentQuestionStart === null) return;
+        
+        const timeDelta = (Date.now() - Test.state.timeSpentOnCurrentQuestionStart) / 1000;
+        const progress = Test.state.userProgress[Test.state.currentQuestionIndex];
+        if (progress) {
+            progress.timeSpent = (progress.timeSpent || 0) + timeDelta;
+        }
+    },
     loadQuestion(index) {
-        Test.state.currentQuestionIndex = index;
-        const q = Test.state.allQuestions[index];
-        const p = Test.state.userProgress[index];
+        this.recordTimeOnCurrentQuestion();
+
+        this.state.currentQuestionIndex = index;
+        const q = this.state.allQuestions[index];
+        const p = this.state.userProgress[index];
 
         if (p.status === 'not-visited') p.status = 'not-answered';
 
-        Test.elements.questionNumberDisplay.textContent = index + 1;
-        Test.elements.marksDisplay.textContent = `${q.marks.correct} / ${q.marks.incorrect}`;
-        Test.elements.typeDisplay.textContent = q.type;
-        Test.elements.questionImage.src = `/test-images/${q.image}`;
-        
-        Test.state.currentSubject = q.subject;
-        Test.elements.subjectTabs.forEach(t => t.classList.toggle('active', t.dataset.subject === Test.state.currentSubject));
+        this.elements.questionNumberDisplay.textContent = index + 1;
+        this.elements.marksDisplay.textContent = `+${q.marks.correct} / ${q.marks.incorrect}`;
+        this.elements.typeDisplay.textContent = q.type.toUpperCase();
+        this.elements.questionImage.src = q.image ? `test-images/${q.image}` : '';
+        this.elements.questionImage.alt = q.image ? `Question ${index+1}` : 'Question image not available.';
+
+        this.state.currentSubject = q.subject;
+        this.elements.subjectTabs.forEach(t => t.classList.toggle('active', t.dataset.subject === this.state.currentSubject));
 
         if (q.type === 'mcq') {
-            Test.elements.mcqOptionsContainer.style.display = 'block';
-            Test.elements.integerInputArea.style.display = 'none';
-            Test.elements.mcqOptionsContainer.innerHTML = q.options.map((opt, i) => `
+            this.elements.mcqOptionsContainer.style.display = 'block';
+            this.elements.integerInputArea.style.display = 'none';
+            this.elements.mcqOptionsContainer.innerHTML = q.options.map((opt, i) => `
                 <div class="option ${p.response === i ? 'selected' : ''}" data-index="${i}">
                     <div class="option-radio"></div>
                     <div class="option-text">${opt}</div>
                 </div>
             `).join('');
-            Test.elements.mcqOptionsContainer.querySelectorAll('.option').forEach(opt => {
-                opt.onclick = () => Test.selectOption(parseInt(opt.dataset.index));
+            this.elements.mcqOptionsContainer.querySelectorAll('.option').forEach(opt => {
+                opt.onclick = () => this.selectOption(parseInt(opt.dataset.index));
             });
         } else {
-            Test.elements.mcqOptionsContainer.style.display = 'none';
-            Test.elements.integerInputArea.style.display = 'block';
-            Test.elements.integerAnswerInput.value = p.response ?? '';
+            this.elements.mcqOptionsContainer.style.display = 'none';
+            this.elements.integerInputArea.style.display = 'block';
+            this.elements.integerAnswerInput.value = p.response ?? '';
         }
 
-        Test.updateUI();
-    },
-    
-    selectOption(optionIndex) {
-        const p = Test.state.userProgress[Test.state.currentQuestionIndex];
-        p.response = p.response === optionIndex ? null : optionIndex;
-        Test.loadQuestion(Test.state.currentQuestionIndex);
-    },
-
-    handleAction(action) {
-        const p = Test.state.userProgress[Test.state.currentQuestionIndex];
-        const q = Test.state.allQuestions[Test.state.currentQuestionIndex];
+        this.updateUI();
         
-        if (q.type === 'integer') p.response = Test.elements.integerAnswerInput.value.trim() || null;
+        this.state.timeSpentOnCurrentQuestionStart = Date.now();
+    },
+    selectOption(optionIndex) {
+        const p = this.state.userProgress[this.state.currentQuestionIndex];
+        p.response = p.response === optionIndex ? null : optionIndex;
+        
+        const q = this.state.allQuestions[this.state.currentQuestionIndex];
+        this.elements.mcqOptionsContainer.innerHTML = q.options.map((opt, i) => `
+            <div class="option ${p.response === i ? 'selected' : ''}" data-index="${i}">
+                <div class="option-radio"></div>
+                <div class="option-text">${opt}</div>
+            </div>
+        `).join('');
+        this.elements.mcqOptionsContainer.querySelectorAll('.option').forEach(opt => {
+            opt.onclick = () => this.selectOption(parseInt(opt.dataset.index));
+        });
+    },
+    handleAction(action) {
+        const p = this.state.userProgress[this.state.currentQuestionIndex];
+        const q = this.state.allQuestions[this.state.currentQuestionIndex];
+        
+        if (q.type === 'integer') {
+            const val = this.elements.integerAnswerInput.value.trim();
+            p.response = val === '' ? null : val;
+        }
         
         const hasResponse = p.response !== null;
         
-        if (action === 'save-next') p.status = hasResponse ? 'answered' : 'not-answered';
-        else if (action === 'mark-next') p.status = hasResponse ? 'answered-marked' : 'marked';
-        else if (action === 'save-mark') p.status = hasResponse ? 'answered-marked' : 'marked';
+        if (action === 'save-next') {
+             p.status = hasResponse ? 'answered' : 'not-answered';
+        } else if (action === 'mark-next') {
+            p.status = hasResponse ? 'answered-marked' : 'marked';
+        } else if (action === 'save-mark') {
+            p.status = hasResponse ? 'answered-marked' : 'marked';
+        }
 
-        if (action.includes('next') && Test.state.currentQuestionIndex < Test.state.allQuestions.length - 1) {
-            Test.loadQuestion(Test.state.currentQuestionIndex + 1);
+        if (action.includes('next')) {
+            if (this.state.currentQuestionIndex < this.state.allQuestions.length - 1) {
+                this.loadQuestion(this.state.currentQuestionIndex + 1);
+            } else {
+                this.updateUI();
+            }
         } else {
-            Test.updateUI();
+            this.updateUI();
         }
     },
-    
-    // --- UI & UX ---
     updateUI() {
-        Test.updateQuestionIndex();
-        Test.updateLegend();
+        this.updateQuestionIndex();
+        this.updateLegend();
     },
-    
     buildQuestionIndex() {
-        Test.elements.questionIndexGrid.innerHTML = Test.state.allQuestions.map((_, index) => 
+        this.elements.questionIndexGrid.innerHTML = this.state.allQuestions.map((_, index) => 
             `<button class="index-btn" data-index="${index}">${index + 1}</button>`
         ).join('');
-        Test.elements.questionIndexGrid.querySelectorAll('.index-btn').forEach(btn => {
-            btn.onclick = (e) => Test.loadQuestion(parseInt(e.target.dataset.index));
+        this.elements.questionIndexGrid.querySelectorAll('.index-btn').forEach(btn => {
+            btn.onclick = (e) => this.loadQuestion(parseInt(e.target.dataset.index));
         });
     },
-    
     updateQuestionIndex() {
-        Test.elements.questionIndexGrid.querySelectorAll('.index-btn').forEach(btn => {
+        if (!this.elements.questionIndexGrid) return;
+        this.elements.questionIndexGrid.querySelectorAll('.index-btn').forEach(btn => {
             const index = parseInt(btn.dataset.index);
-            const p = Test.state.userProgress[index];
-            const q = Test.state.allQuestions[index];
+            const p = this.state.userProgress[index];
+            const q = this.state.allQuestions[index];
             btn.className = 'index-btn';
             btn.classList.add(p.status);
-            if (index === Test.state.currentQuestionIndex) btn.classList.add('current');
-            btn.style.display = q.subject === Test.state.currentSubject ? 'block' : 'none';
+            if (index === this.state.currentQuestionIndex) btn.classList.add('current');
+            btn.style.display = (q.subject === this.state.currentSubject) ? 'flex' : 'none';
         });
     },
-    
     updateLegend() {
         const counts = { answered: 0, notAnswered: 0, notVisited: 0, marked: 0, answeredMarked: 0 };
-        Test.state.userProgress.forEach(p => {
+        this.state.userProgress.forEach(p => {
             if (p.status === 'answered') counts.answered++;
             else if (p.status === 'not-answered') counts.notAnswered++;
             else if (p.status === 'not-visited') counts.notVisited++;
             else if (p.status === 'marked') counts.marked++;
             else if (p.status === 'answered-marked') counts.answeredMarked++;
         });
-        Test.elements.indexLegend.innerHTML = `
-            <div class="legend-item"><span class="legend-box answered">${counts.answered}</span> Answered</div>
-            <div class="legend-item"><span class="legend-box not-answered">${counts.notAnswered}</span> Not Answered</div>
-            <div class="legend-item"><span class="legend-box not-visited">${counts.notVisited}</span> Not Visited</div>
-            <div class="legend-item"><span class="legend-box marked">${counts.marked}</span> Marked</div>
-            <div class="legend-item"><span class="legend-box answered-marked">${counts.answeredMarked}</span> Ans & Marked</div>
-        `;
+        if(this.elements.indexLegend) {
+            this.elements.indexLegend.innerHTML = `
+                <div class="legend-item"><span class="legend-box answered">${counts.answered}</span> Answered</div>
+                <div class="legend-item"><span class="legend-box not-answered">${counts.notAnswered}</span> Not Answered</div>
+                <div class="legend-item"><span class="legend-box not-visited">${counts.notVisited}</span> Not Visited</div>
+                <div class="legend-item"><span class="legend-box marked">${counts.marked}</span> Marked</div>
+                <div class="legend-item"><span class="legend-box answered-marked">${counts.answeredMarked}</span> Ans & Marked</div>
+            `;
+        }
     },
-
     showSummary() {
-        const counts = { total: Test.state.allQuestions.length, answered: 0, notAnswered: 0, notVisited: 0, marked: 0, answeredMarked: 0 };
-        Test.state.userProgress.forEach(p => {
+        const counts = { total: this.state.allQuestions.length, answered: 0, notAnswered: 0, notVisited: 0, marked: 0, answeredMarked: 0 };
+        this.state.userProgress.forEach(p => {
             if (p.status === 'answered') counts.answered++;
             else if (p.status === 'not-answered') counts.notAnswered++;
             else if (p.status === 'not-visited') counts.notVisited++;
@@ -319,77 +365,24 @@ const Test = {
         document.getElementById('summary-marked').textContent = counts.marked;
         document.getElementById('summary-answered-marked').textContent = counts.answeredMarked;
         
-        Test.navigateToView('summary-page');
+        this.navigateToView('summary-page');
     },
-
-    generateResults(analysis) {
-        const { testTitle, results } = analysis;
-        const resultsPage = document.getElementById('results-page');
-        resultsPage.innerHTML = `
-        <div class="results-content">
-            <div class="results-header">
-                <h2>Results: ${testTitle}</h2>
-                <div class="results-actions">
-                    <button id="advanced-analysis-btn">Advanced Analysis</button>
-                    <button id="view-solutions-btn">View Solutions</button>
-                    <button id="save-analysis-btn">Save Analysis</button>
-                </div>
-            </div>
-            <div class="results-summary">
-                <div class="score-card">
-                    <h3>Your Score</h3>
-                    <span class="score">${results.totalScore}</span><span class="score-total">/ ${results.totalMaxMarks}</span>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-item"><div class="value green">${results.correctCount}</div><div class="label">Correct</div></div>
-                    <div class="stat-item"><div class="value red">${results.incorrectCount}</div><div class="label">Incorrect</div></div>
-                    <div class="stat-item"><div class="value grey">${results.unattemptedCount}</div><div class="label">Unattempted</div></div>
-                </div>
-            </div>
-            <div class="section-performance">
-                <h3>Section Performance</h3>
-                <table>
-                    <thead><tr><th>Subject</th><th>Score</th><th>Correct</th><th>Incorrect</th><th>Unattempted</th></tr></thead>
-                    <tbody>
-                        ${Object.keys(results.sections).map(subject => `
-                            <tr>
-                                <td>${subject}</td>
-                                <td>${results.sections[subject].score}</td>
-                                <td class="green">${results.sections[subject].correct}</td>
-                                <td class="red">${results.sections[subject].incorrect}</td>
-                                <td class="grey">${results.sections[subject].unattempted}</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>`;
-        document.getElementById('view-solutions-btn').onclick = () => Test.enterAnalysisMode();
-        document.getElementById('advanced-analysis-btn').onclick = () => alert('Advanced Analysis coming soon!');
-        document.getElementById('save-analysis-btn').onclick = () => alert('Save Analysis coming soon!');
-    },
-    
-    enterAnalysisMode() {
-        alert("Entering Analysis Mode. Note: This is a feature in development.");
-        // This is where you would transition to the analysis view.
-        // For now, it just shows an alert.
-    },
-    
-    // --- UTILITIES ---
     cacheDOMElements() {
-        this.elements.timerDisplay = document.getElementById('timer-display');
-        this.elements.testName = document.getElementById('test-name');
-        this.elements.questionNumberDisplay = document.getElementById('question-number-display');
-        this.elements.marksDisplay = document.getElementById('marks-display');
-        this.elements.typeDisplay = document.getElementById('type-display');
-        this.elements.questionImage = document.getElementById('question-image');
-        this.elements.mcqOptionsContainer = document.getElementById('mcq-options');
-        this.elements.integerInputArea = document.getElementById('integer-input-area');
-        this.elements.integerAnswerInput = document.getElementById('integer-answer');
-        this.elements.questionIndexGrid = document.getElementById('question-index-grid');
-        this.elements.indexLegend = document.querySelector('.index-legend');
-        this.elements.subjectTabs = document.querySelectorAll('.subject-tab');
+        this.elements = {
+            timerDisplay: document.getElementById('timer-display'),
+            testName: document.getElementById('test-name'),
+            questionNumberDisplay: document.getElementById('question-number-display'),
+            marksDisplay: document.getElementById('marks-display'),
+            typeDisplay: document.getElementById('type-display'),
+            questionImage: document.getElementById('question-image'),
+            mcqOptionsContainer: document.getElementById('mcq-options'),
+            integerInputArea: document.getElementById('integer-input-area'),
+            integerAnswerInput: document.getElementById('integer-answer'),
+            questionIndexGrid: document.getElementById('question-index-grid'),
+            indexLegend: document.querySelector('.index-legend'),
+            subjectTabs: document.querySelectorAll('.subject-tab'),
+        };
     },
-
     bindEvents() {
         document.getElementById('save-next-btn').onclick = () => this.handleAction('save-next');
         document.getElementById('mark-next-btn').onclick = () => this.handleAction('mark-next');
@@ -397,9 +390,8 @@ const Test = {
         document.getElementById('clear-btn').onclick = () => {
             const p = this.state.userProgress[this.state.currentQuestionIndex];
             p.response = null;
-            if (p.status === 'answered' || p.status === 'answered-marked') {
-                p.status = p.status === 'answered' ? 'not-answered' : 'marked';
-            }
+            if (p.status === 'answered') p.status = 'not-answered';
+            if (p.status === 'answered-marked') p.status = 'marked';
             this.loadQuestion(this.state.currentQuestionIndex);
         };
         document.getElementById('back-btn').onclick = () => {
@@ -408,11 +400,17 @@ const Test = {
         document.getElementById('next-btn').onclick = () => {
             if (this.state.currentQuestionIndex < this.state.allQuestions.length - 1) this.loadQuestion(this.state.currentQuestionIndex + 1);
         };
+        this.elements.subjectTabs.forEach(tab => {
+            tab.onclick = () => {
+                this.state.currentSubject = tab.dataset.subject;
+                const firstQuestionIndex = this.state.allQuestions.findIndex(q => q.subject === this.state.currentSubject);
+                if(firstQuestionIndex !== -1) this.loadQuestion(firstQuestionIndex);
+            }
+        });
         document.getElementById('submit-test-btn').onclick = () => this.showSummary();
         document.getElementById('resume-btn').onclick = () => this.navigateToView('test-page');
         document.getElementById('final-submit-btn').onclick = () => this.finishTest();
     },
-
     wrapScrollableContent() {
         const questionArea = document.querySelector('.question-area');
         if (!questionArea || questionArea.querySelector('.question-scroll-container')) return;
@@ -423,16 +421,18 @@ const Test = {
         const elementsToWrap = [
             questionArea.querySelector('.question-container'),
             questionArea.querySelector('.answer-area'),
-            questionArea.querySelector('#per-question-analysis-box')
-        ];
+        ].filter(Boolean);
 
         elementsToWrap.forEach(el => {
-            if (el) scrollContainer.appendChild(el);
+            scrollContainer.appendChild(el);
         });
-
-        // Insert the scroll container after the subject tabs
+        
         const subjectTabs = questionArea.querySelector('.subject-tabs');
-        subjectTabs.after(scrollContainer);
+        if (subjectTabs) {
+            subjectTabs.after(scrollContainer);
+        } else {
+             questionArea.prepend(scrollContainer);
+        }
     }
 };
 

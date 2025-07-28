@@ -1,0 +1,57 @@
+<!-- FILE: pages/bookmarks.html -->
+<div id="bookmarks-page" class="page active light-mode">
+    <!-- This structure is now similar to the analysis page for consistency -->
+    <div class="test-main-content">
+        <!-- Left Panel: Filters & Index -->
+        <div class="index-area">
+            <div class="bookmarks-header">
+                <h2>Bookmarks</h2>
+                <a href="/" data-navigo class="action-btn grey">Dashboard</a>
+            </div>
+            <div id="bookmarks-filters" class="filters-container">
+                <!-- 9 Filters will be dynamically populated here -->
+            </div>
+            <div class="index-grid-container">
+                <p class="index-section-title">Filtered Questions (<span id="bm-question-count">0</span>)</p>
+                <div id="bm-index-grid" class="index-grid">
+                    <!-- Index buttons will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Question Display -->
+        <div id="bookmarks-main-content" class="question-area">
+            <div id="bm-question-viewer" class="question-scroll-container" style="display: none;">
+                <div class="question-container">
+                    <div class="question-header">
+                        <div class="question-header-left">
+                            <h3>Question <span id="bm-question-number">1</span>: <span class="bookmark-test-title" id="bm-test-title"></span></h3>
+                            <button id="bm-unbookmark-btn" title="Remove this bookmark">
+                                <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div id="bm-question-meta" class="question-meta">
+                            <!-- Meta tags will be added by JS -->
+                        </div>
+                    </div>
+                    <div id="question-content">
+                        <img id="bm-question-image" src="" alt="Question content">
+                    </div>
+                </div>
+                <div id="bm-per-question-analysis-box">
+                    <!-- Analysis box will be rendered here -->
+                </div>
+            </div>
+            <div id="bm-no-questions-placeholder" class="no-bookmarks-placeholder">
+                <h2>Your bookmarked questions will appear here.</h2>
+                <p>Use the filters to find the questions you're looking for.</p>
+            </div>
+            <footer id="bm-navigation-footer" class="navigation-footer" style="display: none;">
+                <div class="footer-row">
+                    <button id="bm-back-btn" class="nav-arrow-btn">&lt; BACK</button>
+                    <button id="bm-next-btn" class="nav-arrow-btn">NEXT &gt;</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+</div>

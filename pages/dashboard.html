@@ -1,19 +1,27 @@
+<!-- FILE: pages/dashboard.html -->
 <div id="dashboard-page" class="page active">
+    <!-- The sidebar now contains the main navigation AND the test history -->
     <div class="dashboard-sidebar">
         <h1>YAGYA</h1>
         <nav class="dashboard-nav">
             <a href="/" data-navigo class="active">Tests</a>
-            <a href="/bookmarks" data-navigo class="disabled">Bookmarks (coming soon)</a>
+            <a href="/bookmarks" data-navigo>Bookmarks</a> <!-- UPDATED -->
             <a href="/analytics" data-navigo class="disabled">Analytics (coming soon)</a>
         </nav>
+
+        <!-- Container for Test History in the sidebar -->
+        <div id="sidebar-history-container">
+            <h3 class="sidebar-section-title">Test History</h3>
+            <div id="sidebar-history-list">
+                <!-- History items will be dynamically inserted here by dashboard.js -->
+            </div>
+        </div>
     </div>
+
+    <!-- The main content area is now dedicated to available tests -->
     <div class="dashboard-main">
         <header class="dashboard-header">
-            <h2>Test Dashboard</h2>
-            <div class="dashboard-actions">
-                <button id="load-analysis-btn">Load & Review Saved Test</button>
-                <input type="file" id="analysis-file-input" style="display: none;" accept=".json">
-            </div>
+            <h2>Available Tests</h2>
         </header>
         <main>
             <div class="test-list-container">
@@ -24,7 +32,8 @@
                     <span>Actions</span>
                 </div>
                 <div id="test-list">
-                    </div>
+                    <!-- Available test items will be dynamically inserted here by dashboard.js -->
+                </div>
             </div>
         </main>
     </div>

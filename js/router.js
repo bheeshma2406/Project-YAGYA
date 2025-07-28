@@ -1,61 +1,63 @@
 // FILE: js/router.js
 // PURPOSE: Defines all application routes and how to load pages.
 
+// Import page modules
 import Dashboard from './pages/dashboard.js';
 import Test from './pages/test.js';
+import Analysis from './pages/analysis.js';
+import Bookmarks from './pages/bookmarks.js'; // <-- ADD THIS LINE
 
 // Initialize the router
 const router = new Navigo('/', { hash: true });
 
 // Helper function to load page content into the main container
-const loadPage = async (page, id = null) => {
+const loadPage = async (pageModule, params = null) => {
     const appContainer = document.getElementById('app-container');
     if (!appContainer) {
         console.error("Fatal Error: #app-container not found in DOM.");
         return;
     }
     
-    // Show a loading message while fetching content
-    appContainer.innerHTML = '<h2>Loading...</h2>';
+    appContainer.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.className = pageModule.theme || 'dark-mode';
     
-    const html = await page.render();
+    try {
+        const html = await pageModule.render();
+        appContainer.innerHTML = html;
 
-    // Directly set the innerHTML. This is simpler and often more reliable.
-    appContainer.innerHTML = html;
-
-    // Now that the content is on the page, run the after_render logic.
-    // We use a setTimeout with a delay of 0. This is a standard trick
-    // to push the execution to the end of the browser's event queue,
-    // ensuring the DOM is fully painted and ready before the script runs.
-    if (page.after_render) {
-        setTimeout(async () => {
-            try {
-                await page.after_render(id);
-                // IMPORTANT: This makes sure Navigo updates links in the new content
-                router.updatePageLinks();
-            } catch (err) {
-                console.error("Error during after_render:", err);
-                appContainer.innerHTML = `<h2>An error occurred while loading the page.</h2><p>Check the console for details.</p>`;
-            }
-        }, 0);
-    } else {
+        if (pageModule.after_render) {
+            await pageModule.after_render(params);
+        }
+        
         router.updatePageLinks();
+
+    } catch (err) {
+        console.error("Error loading page:", err);
+        appContainer.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: #ffcccc;">
+                <h2>Failed to Load Page Content</h2>
+                <p><i>Error: ${err.message}</i></p>
+            </div>
+        `;
     }
 };
 
 // Define all the routes for the application
 router.on({
     '/': () => loadPage(Dashboard),
+    '/bookmarks': () => loadPage(Bookmarks), // <-- ADD THIS LINE
     '/test/:id': ({ data }) => loadPage(Test, data.id),
-    // Future routes like '/analysis' will be added here
+    '/analysis/:id': ({ data }) => loadPage(Analysis, data.id),
 });
 
 // A catch-all for any route that is not found
 router.notFound(() => {
-    document.getElementById('app-container').innerHTML = '<h2>404 - Page Not Found</h2>';
+    const appContainer = document.getElementById('app-container');
+    appContainer.innerHTML = '<h2>404 - Page Not Found</h2>';
+    console.warn(`Navigo: route not found for ${window.location.hash}`);
 });
 
-// Make the router instance globally available for convenience
+// Make the router instance globally available
 window.router = router;
 
 // Export the router to be started by main.js

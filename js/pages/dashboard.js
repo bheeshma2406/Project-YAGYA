@@ -1,66 +1,87 @@
-// js/pages/dashboard.js
+// FILE: js/pages/dashboard.js
 
 const Dashboard = {
+    theme: 'dark-mode', // <-- ADD THIS LINE (OPTIONAL BUT RECOMMENDED)
+
     render: async () => {
-        // Fetch the HTML for the dashboard
-        const response = await fetch('/pages/dashboard.html');
-        const html = await response.text();
-        return html;
+        const response = await fetch('pages/dashboard.html');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch dashboard.html: ${response.statusText}`);
+        }
+        return await response.text();
     },
     after_render: async () => {
-        // This function is called after the HTML is inserted into the DOM
-        console.log("Dashboard page rendered. Initializing logic.");
+        console.log("Dashboard logic initialized.");
         
         const testListEl = document.getElementById('test-list');
-        const loadAnalysisBtn = document.getElementById('load-analysis-btn');
-        const analysisFileInput = document.getElementById('analysis-file-input');
+        const historyListEl = document.getElementById('sidebar-history-list');
 
-        // Check if test manifest is loaded
-        if (typeof allTests === 'undefined' || !Array.isArray(allTests)) {
-            testListEl.innerHTML = `<p style="padding: 20px;">Error: test-manifest.js not found or invalid.</p>`;
+        // --- 1. Render the list of available tests ---
+        if (typeof allTests !== 'undefined' && Array.isArray(allTests)) {
+            testListEl.innerHTML = allTests.map(test => `
+                <div class="test-item">
+                    <span class="test-item-title">${test.title}</span>
+                    <span class="test-item-date">${test.date}</span>
+                    <span class="test-item-status">Not Attempted</span>
+                    <div class="test-item-actions">
+                        <a href="/test/${test.id}" data-navigo class="action-btn start-test-btn">Start Test</a>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+             testListEl.innerHTML = `<div class="test-item"><p>Error: test-manifest.js not found or invalid.</p></div>`;
+        }
+
+        // --- 2. Fetch and render the test history from Firebase ---
+        if (!historyListEl) {
+            console.error("Sidebar history list element not found!");
             return;
         }
 
-        // Populate the test list
-        testListEl.innerHTML = allTests.map(test => `
-            <div class="test-item">
-                <span class="test-item-title">${test.title}</span>
-                <span class="test-item-date">${test.date}</span>
-                <span class="test-item-status">Not Attempted</span>
-                <div class="test-item-actions">
-                    <a href="/test/${test.id}" data-navigo class="action-btn start-test-btn" style="text-decoration: none;">Start Test</a>
-                </div>
-            </div>
-        `).join('');
-        
-        // Event listener for loading analysis files
-        loadAnalysisBtn.addEventListener('click', () => analysisFileInput.click());
-        analysisFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        historyListEl.innerHTML = `<p class="history-loading">Loading history...</p>`;
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const analysisData = JSON.parse(event.target.result);
-                    if (analysisData.version && analysisData.version.startsWith("YAGYA")) {
-                        // Save to localStorage to pass it to the analysis page
-                        localStorage.setItem('loadedAnalysisData', JSON.stringify(analysisData));
-                        // Navigate to the analysis page (we will create this route later)
-                        window.router.navigate('/analysis');
-                    } else {
-                        alert("Invalid or corrupted analysis file.");
-                    }
-                } catch (error) {
-                    console.error("Error parsing analysis file:", error);
-                    alert("Could not parse the selected file.");
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = ''; // Reset input
-        });
+        try {
+            // **THE FIX: Use the v8 compatibility syntax which works with the loaded scripts**
+            if (!window.db) throw new Error("Firestore (window.db) is not initialized.");
+            
+            const querySnapshot = await window.db
+                .collection("testResults")
+                .orderBy("attemptedOn", "desc")
+                .get();
+            
+            if (querySnapshot.empty) {
+                historyListEl.innerHTML = `<p class="history-empty">No test history found.</p>`;
+                return;
+            }
+
+            const historyHTML = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                const attemptDate = new Date(data.attemptedOn).toLocaleString('en-IN', { day: 'numeric', month: 'short' });
+                const score = data.results?.totalScore ?? 'N/A';
+
+                return `
+                    <a href="/analysis/${doc.id}" data-navigo class="sidebar-history-item">
+                        <p class="title">${data.testTitle}</p>
+                        <div class="details">
+                            <span>${attemptDate}</span>
+                            <span>Score: ${score}</span>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+            
+            historyListEl.innerHTML = historyHTML;
+
+        } catch (error) {
+            console.error("Error fetching test history: ", error);
+            historyListEl.innerHTML = `<p class="history-error">Error loading history.</p>`;
+            // Log the specific Firestore error to the console for better debugging
+            if (error.code) {
+                 console.error(`Firestore Error Code: ${error.code}`);
+                 console.error(`Firestore Error Message: ${error.message}`);
+            }
+        }
     }
 };
 
-// Export the object for the router to use
 export default Dashboard;

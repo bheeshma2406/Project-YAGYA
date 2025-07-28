@@ -1,0 +1,102 @@
+<!-- FILE: pages/analysis.html -->
+<div id="analysis-page" class="page active dark-mode">
+
+    <!-- Header Section -->
+    <header class="analysis-header">
+        <div class="analysis-header-left">
+            <h2 id="analysis-test-title">Loading Analysis...</h2>
+        </div>
+        <div class="analysis-header-right">
+            <button id="view-solutions-btn" class="action-btn blue">View Solutions</button>
+            <button id="back-to-results-btn" class="action-btn blue" style="display: none;">Back to Results</button>
+            <button id="back-to-dashboard-btn" class="action-btn grey">Dashboard</button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="analysis-main">
+
+        <!-- View 1: Results Summary (Default View) -->
+        <div id="results-view" class="analysis-content-view">
+            <!-- Content will be rendered here by analysis.js -->
+        </div>
+
+                <!-- View 2: Solution Viewer -->
+        <div id="solution-view" class="test-main-content" style="display: none;">
+
+            <!-- Left Side: Question -->
+            <div class="question-area">
+                <!-- UPDATED HEADER -->
+                        <div class="question-header">
+                            <div class="question-header-left">
+                                <h3>Question <span id="sol-question-number">1</span>:</h3>
+                                <button id="sol-bookmark-btn" title="Bookmark this question">
+                                    <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="sol-question-meta" class="question-meta">
+                                <!-- Meta tags will be added by JS -->
+                            </div>
+                        </div>
+
+                <!-- The SCROLL CONTAINER now wraps both the question and the analysis box -->
+                <div class="question-scroll-container">
+
+                    <!-- Question Container is INSIDE the scroll box -->
+                    <div class="question-container">
+                        
+                        <div id="question-content">
+                            <img id="sol-question-image" src="" alt="Question content loads here...">
+                        </div>
+                    </div>
+
+                    <!-- The per-question box is also INSIDE the scroll box -->
+                    <div id="per-question-analysis-box">
+                        <!-- Per-question details will be rendered here by analysis.js -->
+                    </div>
+
+                </div> <!-- End of the question-scroll-container -->
+
+                <!-- The FOOTER must stay OUTSIDE the scroll container -->
+                <footer class="navigation-footer">
+                    <div class="footer-row">
+                        <button id="sol-back-btn" class="nav-arrow-btn">< BACK</button>
+                        <button id="sol-next-btn" class="nav-arrow-btn">NEXT ></button>
+                    </div>
+                </footer>
+
+            </div> <!-- End of question-area -->
+            
+            <!-- Right Side: Index Panel -->
+            <div class="index-area">
+                <!-- UPDATED FILTERS -->
+                <div id="analysis-filters">
+                    <select id="filter-status">
+                        <option value="All">All Status</option>
+                        <option value="Correct">Correct</option>
+                        <option value="Incorrect">Incorrect</option>
+                        <option value="Unattempted">Unattempted</option>
+                    </select>
+                    <select id="filter-level">
+                        <option value="All">All Levels</option>
+                    </select>
+                    <select id="filter-subject">
+                        <option value="All">All Subjects</option>
+                    </select>
+                    <select id="filter-chapter">
+                        <option value="All">All Chapters</option>
+                    </select>
+                </div>
+                <!-- NEW LEGEND -->
+                <div id="sol-index-legend" class="index-legend">
+                    <!-- Legend will be rendered by JS -->
+                </div>
+                <div class="index-grid-container">
+                    <p class="index-section-title">Questions</p>
+                    <div id="sol-index-grid" class="index-grid"></div>
+                </div>
+            </div> <!-- End of index-area -->
+
+        </div> <!-- This is the final closing div for the entire #solution-view -->
+    </main>
+</div>

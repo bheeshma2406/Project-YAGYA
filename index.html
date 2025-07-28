@@ -4,23 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YAGYA Test Platform</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Link to our external CSS file -->
-    <link rel="stylesheet" href="/css/main.css">
+    
+    <!-- Stylesheet - CORRECTED PATH -->
+    <link rel="stylesheet" href="./css/main.css">
+    
+    <!-- External Libraries - CORRECTED PATH -->
+    <script src="./js/lib/navigo.min.js"></script>
+    <script src="./test-manifest.js"></script>
 </head>
 <body>
-    <!-- The main container where all pages will be loaded by the router -->
-    <div id="app-container"></div>
+    <!-- The single container for our Single Page Application -->
+    <div id="app-container">
+        <!-- The router will fill this with page content -->
+        <div class="loading-spinner"></div>
+    </div>
 
-    <!-- Load external scripts -->
-    <script src="/js/lib/navigo.min.js"></script>
-    <script src="/test-manifest.js"></script>
-    
-    <!-- App entry point scripts -->
-    <!-- Note: The main.js script is loaded as a module -->
-    <script type="module" src="/js/router.js"></script>
-    <script type="module" src="/js/main.js"></script>
+    <!-- Firebase SDKs (ensure you have these in your project) -->
+    <!-- Using compat libraries for easier transition from v8 to v9 modular -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Initialization -->
+    <script src="./js/firebase-init.js"></script>
+
+    <!-- Main Application Entry Point -->
+    <script type="module" src="./js/main.js"></script>
 </body>
 </html>

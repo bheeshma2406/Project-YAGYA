@@ -1,24 +1,17 @@
 /* --- Global Styles & Variables --- */
 :root {
     --font-family: 'Roboto', sans-serif;
-    
-    /* Light Theme (Test Mode) */
     --light-bg: #f5f5f5;
     --light-surface: #ffffff;
     --light-text-primary: #212121;
     --light-text-secondary: #555555;
     --light-border: #e0e0e0;
-    --light-header: #eef5ff;
-
-    /* Dark Theme (Dashboard & Analysis) */
-    --dark-bg: #121828; /* Attractive Dark Blue/Grey */
+    --dark-bg: #121828;
     --dark-surface: #1B2133;
     --dark-surface-light: #2A3149;
     --dark-text-primary: #E0E7FF;
     --dark-text-secondary: #A6B3D8;
     --dark-border: #3A4264;
-
-    /* Accent Colors */
     --accent-green: #27ae60;
     --accent-red: #c0392b;
     --accent-blue: #3B82F6;
@@ -27,590 +20,790 @@
     --accent-grey: #7f8c8d;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+body.dark-mode { background-color: var(--dark-bg); color: var(--dark-text-primary); }
+body.light-mode { background-color: var(--light-bg); color: var(--light-text-primary); }
+#app-container { display: flex; flex-direction: column; flex-grow: 1; height: 100%; justify-content: center; align-items: center; padding: 15px; /* <-- ADD THIS LINE */
+    gap: 15px; /* OPTIONAL BUT RECOMMENDED */ }
+.page { display: none; width: 100%; height: 100%; flex-direction: column; }
+.page.active { display: flex; }
+button, a.action-btn { font-family: var(--font-family); cursor: pointer; border: none; text-decoration: none; }
+.loading-spinner { width: 50px; height: 50px; border: 5px solid var(--dark-surface-light); border-top: 5px solid var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* --- Global Image Control --- */
+#question-image, #sol-question-image, #bm-question-image, #sol-solution-image {
+  max-width: 65%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-body {
-    font-family: var(--font-family);
-    transition: background-color 0.3s, color 0.3s;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden; /* Prevent body scroll */
-}
+/* --- DASHBOARD STYLES --- */
+#dashboard-page { flex-direction: row; }
+.dashboard-sidebar { width: 260px; background-color: var(--dark-surface); padding: 20px; border-right: 1px solid var(--dark-border); flex-shrink: 0; display: flex; flex-direction: column; }
+.dashboard-sidebar h1 { font-size: 24px; margin-bottom: 30px; }
+.dashboard-nav a { display: block; padding: 12px 15px; color: var(--dark-text-secondary); text-decoration: none; border-radius: 6px; margin-bottom: 5px; font-weight: 500; }
+.dashboard-nav a.active { background-color: var(--accent-blue); color: white; }
+.dashboard-nav a.disabled { color: #555e7a; cursor: not-allowed; }
+.dashboard-main { flex-grow: 1; padding: 30px; overflow-y: auto; }
+.dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.test-list-container { background-color: var(--dark-surface); border-radius: 8px; padding: 20px; border: 1px solid var(--dark-border); }
+.test-list-header { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; padding: 0 15px 15px 15px; border-bottom: 1px solid var(--dark-border); color: var(--dark-text-secondary); font-weight: 500; }
+.test-item { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; padding: 20px 15px; border-bottom: 1px solid var(--dark-border); align-items: center; }
+.test-item:last-child { border-bottom: none; }
+.action-btn.start-test-btn { background-color: var(--accent-green); color: white; padding: 8px 16px; border-radius: 5px; }
+#sidebar-history-container { margin-top: 30px; border-top: 1px solid var(--dark-border); padding-top: 20px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+.sidebar-section-title { font-size: 16px; font-weight: 500; color: var(--dark-text-secondary); margin-bottom: 15px; }
+#sidebar-history-list { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+#sidebar-history-list > p { padding: 10px; font-style: italic; color: var(--dark-text-secondary); }
+.sidebar-history-item { display: block; padding: 12px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 5px; text-decoration: none; color: var(--dark-text-primary); }
+.sidebar-history-item:hover { background-color: var(--dark-surface-light); }
+.sidebar-history-item .title { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-history-item .details { font-size: 12px; color: var(--dark-text-secondary); display: flex; justify-content: space-between; margin-top: 4px; }
 
-/* --- Theme Management --- */
-body.dark-mode {
-    background-color: var(--dark-bg);
-    color: var(--dark-text-primary);
-}
-body.light-mode {
-    background-color: var(--light-bg);
-    color: var(--light-text-primary);
-}
+/* --- INSTRUCTIONS & SUMMARY --- */
+#instructions-page, #summary-page { justify-content: center; align-items: center; padding: 30px; }
+.instructions-content, .summary-box { background: var(--dark-surface); padding: 40px; border-radius: 8px; text-align: center; max-width: 800px; border: 1px solid var(--dark-border); }
+.instructions-buttons button, .summary-buttons button { padding: 12px 30px; border-radius: 5px; font-size: 16px; margin: 0 10px; }
+#back-to-dashboard-btn, #resume-btn { border: 1px solid #ccc; background: none; color: var(--dark-text-primary); }
+#start-test-btn-from-instructions, #final-submit-btn { background: var(--accent-blue); color: white; }
 
-#app-container {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    height: 100%;
-}
+/* --- SHARED LAYOUT FOR TEST, ANALYSIS, BOOKMARKS --- */
+.test-main-content { display: flex; padding: 15px; gap: 15px; flex-grow: 1; overflow: hidden; width: 100%;}
+.question-area { flex-grow: 1; background-color: var(--light-surface); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+.question-scroll-container { overflow-y: auto; flex-grow: 1; }
+.question-container { padding: 20px; }
+.question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.question-header-left { display: flex; align-items: center; gap: 15px; }
+.question-meta { display: flex; gap: 10px; }
+.meta-tag { background-color: #eee; padding: 5px 10px; border-radius: 4px; font-size: 13px; color: var(--light-text-primary);}
+.navigation-footer { display: flex; flex-direction: column; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--light-border); background-color: #fcfcfc; flex-shrink: 0; }
+.footer-row { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.nav-arrow-btn { border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: none; color: var(--light-text-secondary); }
+.action-btn { padding: 10px 20px; color: white; border-radius: 4px; font-weight: 500; }
+.action-btn.green { background-color: var(--accent-green); }
+.action-btn.blue { background-color: var(--accent-blue); }
+.action-btn.grey { background-color: var(--accent-grey); }
+.index-area { width: 320px; min-width: 320px; background-color: var(--light-surface); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; color: var(--light-text-primary); }
+.index-grid-container { overflow-y: auto; flex-grow: 1; }
+.index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; }
 
-.page {
-    display: none; /* All pages hidden by default */
-    width: 100%;
-    height: 100%;
-    flex-direction: column;
-}
-.page.active {
-    display: flex;
-}
+/* --- NEW UNIFIED & FIXED TEST PAGE UI --- */
 
-button {
-    font-family: var(--font-family);
-    cursor: pointer;
-}
-
-/* --- DASHBOARD LAYOUT STYLES --- */
-#dashboard-page {
-    flex-direction: row;
-}
-.dashboard-sidebar {
-    width: 240px;
-    background-color: var(--dark-surface);
-    padding: 20px;
-    border-right: 1px solid var(--dark-border);
-    flex-shrink: 0;
-}
-.dashboard-sidebar h1 {
-    font-size: 24px;
-    margin-bottom: 30px;
-}
-.dashboard-nav a {
-    display: block;
-    padding: 12px 15px;
-    color: var(--dark-text-secondary);
-    text-decoration: none;
-    border-radius: 6px;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-.dashboard-nav a.active {
-    background-color: var(--accent-blue);
-    color: white;
-}
-.dashboard-nav a.disabled {
-    color: #666;
-    cursor: not-allowed;
-}
-.dashboard-main {
-    flex-grow: 1;
-    padding: 30px;
-    overflow-y: auto;
-}
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-.dashboard-header h2 {
-    font-size: 28px;
-}
-.dashboard-actions button {
-    background-color: var(--accent-blue);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-}
-.test-list-container {
-    background-color: var(--dark-surface);
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid var(--dark-border);
-}
-.test-list-header {
-    display: grid;
-    grid-template-columns: 3fr 1fr 1fr 1fr;
-    padding: 0 15px 15px 15px;
-    border-bottom: 1px solid var(--dark-border);
-    color: var(--dark-text-secondary);
-    font-weight: 500;
-}
-.test-item {
-    display: grid;
-    grid-template-columns: 3fr 1fr 1fr 1fr;
-    padding: 20px 15px;
-    border-bottom: 1px solid var(--dark-border);
-    align-items: center;
-}
-.test-item:last-child {
-    border-bottom: none;
-}
-.test-item-actions .action-btn {
-    background-color: var(--accent-green) !important;
-    border-color: var(--accent-green) !important;
-    color: white !important;
-    padding: 8px 16px;
-    border-radius: 5px;
-    text-decoration: none;
-}
-
-/* --- INSTRUCTIONS, SUMMARY, RESULTS (GENERIC CENTERED PAGES) --- */
-#instructions-page, #summary-page, #results-page, #analysis-dashboard-page {
-    justify-content: flex-start;
-    align-items: center;
-    overflow-y: auto;
-    padding: 30px;
-}
-
-.instructions-content, .summary-box {
-    background: var(--dark-surface);
-    padding: 40px;
-    border-radius: 8px;
-    text-align: center;
-    max-width: 800px;
-    border: 1px solid var(--dark-border);
-    margin-top: 40px;
-}
-.instructions-content p, .summary-warning {
-     margin: 20px 0;
-     line-height: 1.6;
-}
-.instructions-buttons button, .summary-buttons button {
-    padding: 12px 30px;
-    border-radius: 5px;
-    border: 1px solid;
-    font-size: 16px;
-    margin: 0 10px;
-}
-#back-to-dashboard-btn, #resume-btn {
-    border-color: #ccc;
-    background: none;
-    color: var(--dark-text-primary);
-}
-#start-test-btn-from-instructions, #final-submit-btn {
-    border-color: var(--accent-blue);
-    background: var(--accent-blue);
-    color: white;
-}
-
-/* --- TEST STYLES (LIGHT MODE) --- */
-#test-page {
-    overflow: hidden; /* Prevent double scrollbars */
-}
+/* 3. Test Header Cleanup */
 .test-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 30px;
-    background-color: var(--light-surface);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    flex-shrink: 0; 
+    padding: 10px 20px;
+    background-color: var(--dark-surface);
+    border-bottom: 1px solid var(--dark-border);
 }
-.user-info { display: flex; align-items: center; }
-.user-icon { width: 40px; height: 40px; border-radius: 50%; background-color: #ccc; margin-right: 15px; }
-.user-info p { margin: 0; line-height: 1.4; font-size: 14px; }
-.timer-info { text-align: right; }
-.timer-info p { margin: 0 0 5px 0; font-size: 14px; }
+.test-header .user-info p { margin: 2px 0; }
+.test-header .timer-info { text-align: right; }
 #timer-display {
-    background-color: var(--accent-blue);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 18px;
-    font-weight: 700;
-}
-.test-main-content {
-    display: flex;
-    padding: 15px;
-    gap: 15px;
-    flex-grow: 1;
-    overflow: hidden;
-}
-.question-area {
-    flex-grow: 1;
-    background-color: var(--light-surface);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Hide scrollbar from this container */
-}
-.subject-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--light-border);
-    flex-shrink: 0; /* Prevent tabs from shrinking */
-}
-.subject-tab {
-    padding: 15px 25px;
-    border: none;
-    background: none;
-    font-size: 16px;
-    color: var(--light-text-secondary);
-    position: relative;
-}
-.subject-tab.active {
-    font-weight: 700;
+    font-size: 1.5em;
+    font-weight: bold;
     color: var(--accent-blue);
 }
-.subject-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background-color: var(--accent-blue);
-}
-/* This new container will hold all scrollable content */
-.question-scroll-container {
-    overflow-y: auto; /* Enable vertical scrolling */
-    flex-grow: 1; /* Allow it to take up available space */
-}
-.question-container { padding: 20px; }
-.question-header {
+
+/* 1. MCQ Option Styling */
+.answer-area { padding: 10px 20px; }
+#mcq-options {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 12px;
 }
-.question-header-left {
+.option {
     display: flex;
     align-items: center;
     gap: 15px;
-}
-.meta-tag {
-    background-color: #eee;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 13px;
-}
-#bookmark-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-}
-#bookmark-btn svg {
-    width: 24px;
-    height: 24px;
-    stroke: #555;
-    stroke-width: 2;
-    fill: none;
-}
-#bookmark-btn.bookmarked svg {
-    fill: var(--accent-orange);
-    stroke: var(--accent-orange);
-}
-#question-content img { max-width: 100%; display: block; margin: 10px auto; }
-.answer-area { padding: 20px; border-top: 1px solid var(--light-border); }
-#mcq-options .option {
-    display: flex;
-    align-items: center;
     padding: 12px;
     border: 1px solid var(--light-border);
-    border-radius: 5px;
-    margin-bottom: 10px;
+    border-radius: 6px;
     cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
 }
-#mcq-options .option.selected {
-    background-color: var(--light-header);
+.option:hover { background-color: #f0f4ff; }
+.option.selected {
     border-color: var(--accent-blue);
+    background-color: #e6efff;
 }
 .option-radio {
     width: 20px;
     height: 20px;
-    border: 2px solid #aaa;
+    border: 2px solid var(--light-text-secondary);
     border-radius: 50%;
-    margin-right: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     flex-shrink: 0;
+    position: relative;
 }
 .option.selected .option-radio { border-color: var(--accent-blue); }
 .option.selected .option-radio::after {
     content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 10px;
     height: 10px;
     background-color: var(--accent-blue);
     border-radius: 50%;
 }
-#integer-input-area input {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 200px;
-}
-.navigation-footer {
+.option-text { font-size: 16px; }
+
+/* 2. & 4. Question Index & Legend Colors */
+.index-legend {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 15px 20px;
-    border-top: 1px solid var(--light-border);
-    background-color: #fcfcfc;
-    flex-shrink: 0; /* Prevent footer from shrinking */
-}
-.footer-row {
-    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 15px; /* Added more horizontal gap */
     justify-content: center;
+    padding: 10px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--light-border);
+    margin-bottom: 10px;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    font-size: 10px;
+    display: flex;
     align-items: center;
-    gap: 10px;
-}
-.footer-row:last-child { justify-content: space-between; }
-.nav-arrow-btn {
-    background: none;
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    border-radius: 4px;
-    color: var(--light-text-secondary);
-}
-.action-btn {
-    padding: 10px 20px;
+    justify-content: center;
     color: white;
-    border: none;
-    border-radius: 4px;
     font-weight: 500;
 }
-.action-btn.green { background-color: var(--accent-green); }
-.action-btn.blue { background-color: var(--accent-blue); }
-.action-btn.orange { background-color: var(--accent-orange); }
-.action-btn.grey { background-color: var(--accent-grey); }
-.index-area {
-    width: 320px;
-    min-width: 320px;
-    background-color: var(--light-surface);
-    border-radius: 8px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-}
-#analysis-filters {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--light-border);
-}
-#analysis-filters select {
-    width: 100%;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid var(--light-border);
-}
-.index-legend {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    font-size: 13px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--light-border);
-}
-.legend-item { display: flex; align-items: center; gap: 8px; }
-.legend-item .legend-box { 
-    width: 20px; 
-    height: 20px; 
-    font-size: 12px;
+.index-btn { /* Style applied to buttons on ALL pages */
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 3px;
-    border: 1px solid var(--light-border);
 }
-.index-section-title { font-weight: 700; margin-bottom: 10px; }
-.index-grid-container { overflow-y: auto; flex-grow: 1; }
-.index-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    gap: 8px;
-}
-.index-btn {
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--light-border);
-    background-color: transparent;
-    border-radius: 4px;
-    font-size: 16px;
+/* Default/Not Visited Status */
+.index-btn, .legend-box {
     color: var(--light-text-primary);
+    background-color: transparent;
+    border: 1px solid var(--light-border);
 }
-
-/* Test Mode Index Colors */
-.index-btn.answered, .legend-box.answered { background-color: var(--accent-green); color: white; border-color: var(--accent-green);}
-.index-btn.not-answered, .legend-box.not-answered { background-color: var(--accent-red); color: white; border-color: var(--accent-red);}
-.index-btn.not-visited, .legend-box.not-visited { background-color: transparent; border-color: #ccc; }
-.index-btn.marked, .legend-box.marked { background-color: var(--accent-purple); color: white; border-color: var(--accent-purple);}
-.index-btn.answered-marked, .legend-box.answered-marked { background-color: var(--accent-purple); color: white; position: relative; border-color: var(--accent-purple);}
-.index-btn.answered-marked::after {
-    content: '';
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 8px;
-    height: 8px;
+.index-btn.not-visited, .legend-box.not-visited {
+    background-color: #ffffff;
+}
+/* Other Statuses */
+.index-btn.not-answered, .legend-box.not-answered, .index-btn.incorrect, .legend-box.incorrect {
+    background-color: var(--accent-red);
+    color: white;
+    border-color: var(--accent-red);
+}
+.index-btn.answered, .legend-box.answered, .index-btn.correct, .legend-box.correct {
     background-color: var(--accent-green);
-    border-radius: 50%;
+    color: white;
+    border-color: var(--accent-green);
 }
-.index-btn.current { border: 2px solid var(--accent-orange); }
+.index-btn.marked, .legend-box.marked {
+    background-color: var(--accent-orange);
+    color: white;
+    border-color: var(--accent-orange);
+}
+.index-btn.answered-marked, .legend-box.answered-marked {
+    background-color: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+}
+.index-btn.unattempted, .legend-box.unattempted {
+    background-color: #d1d5db; /* Grey for Unattempted in analysis */
+    color: var(--light-text-primary);
+    border-color: #9ca3af;
+}
 
-/* Analysis Mode Index Colors */
-.index-btn.correct { background-color: var(--accent-green); color: white; }
-.index-btn.incorrect { background-color: var(--accent-red); color: white; }
-.index-btn.unattempted { background-color: #e0e0e0; border-color: #ccc; }
+/* Highlighting the CURRENT question */
+.index-btn.current {
+    box-shadow: 0 0 0 2px var(--dark-bg), 0 0 0 4px var(--accent-blue);
+    border-color: var(--accent-blue) !important; /* !important to override status border color */
+    z-index: 1;
+    position: relative; /* Needed for z-index to work */
+}
+/* ========================================================= */
+/* --- NEW: FULL TEST PAGE UI OVERHAUL (NTA STYLE) --- */
+/* ========================================================= */
 
-/* Per-Question Analysis Box Styles */
-#per-question-analysis-box {
+/* Bug 1 & 5: Make Header Light with Dark Text (NTA Style) */
+.test-header {
+    background-color: var(--light-surface);
+    color: var(--light-text-primary);
+    border-bottom: 1px solid var(--light-border);
+}
+#timer-display {
+    color: #212121; /* Timer should be dark on a light background */
+}
+.test-header .user-info p {
+    font-size: 14px;
+}
+.test-header .user-info p strong {
+    font-weight: 500;
+}
+
+
+/* Bug 4: Style the Subject Tabs */
+.subject-tabs {
+    display: flex;
+    justify-content: flex-start; /* Align tabs to the left */
+    gap: 10px;
+    border-bottom: 1px solid var(--light-border);
+    padding: 0 20px; /* Align with question content */
+    margin-bottom: 20px;
+}
+.subject-tab {
+    padding: 12px 20px;
+    border: none;
+    border-bottom: 3px solid transparent; /* Hidden border for the active effect */
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--light-text-secondary);
+    transition: all 0.2s ease-in-out;
+}
+.subject-tab:hover {
+    color: var(--accent-blue);
+}
+.subject-tab.active { /* This class is added by your test.js */
+    color: var(--accent-blue);
+    border-bottom: 3px solid var(--accent-blue);
+}
+
+/* Bug 3: Thinner Blue Box on Current Question */
+.index-btn.current {
+    box-shadow: none; /* Remove the old thick shadow */
+    border: 2px solid var(--accent-blue) !important;
+}
+
+
+/* Bug 6 & 2: Fix Footer Layout and Button Colors */
+#test-mode-footer { /* Targets the footer only in test mode */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Adds space between the two rows of buttons */
+}
+.footer-row {
+    justify-content: space-between; /* This is the key for NTA layout */
+    width: 100%;
+}
+.left-nav {
+    flex-grow: 1; /* Pushes the submit button to the right */
+    display: flex;
+    justify-content: flex-start; /* Aligns Back/Next to the left */
+}
+
+/* Button Colors */
+#mark-next-btn {
+    background-color: var(--accent-orange);
+}
+#save-mark-btn {
+    background-color: var(--accent-blue);
+}
+#clear-btn {
+    background-color: var(--accent-grey);
+    color: white;
+}
+
+/* Gray out all disabled buttons to match NTA */
+.action-btn[disabled] {
+    background-color: #d1d5db !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+/* --- Global Image Control --- */
+#question-image, #sol-question-image, #bm-question-image, #sol-solution-image {
+  max-width: 65%;
+  height: auto;
+  display: block;
+}
+/* ========================================================= */
+/* --- NEW: NTA-Accurate Index & Legend Colors --- */
+/* ========================================================= */
+
+/* First, establish PURPLE as the color for BOTH review states */
+.index-btn.marked, .legend-box.marked,
+.index-btn.answered-marked, .legend-box.answered-marked {
+    background-color: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+}
+
+/* Now, for the buttons on the main question index grid... */
+.index-btn.answered-marked {
+    position: relative; /* This is crucial for placing the icon */
+    overflow: hidden; /* Ensures the icon doesn't stick out */
+}
+
+/* The magic part: Add the small green "tick" icon */
+/* We use an ::after pseudo-element to create it purely with CSS */
+.index-btn.answered-marked::after {
+    content: ''; /* Must be empty */
+    position: absolute;
+    bottom: -1px; /* Position it at the bottom-right corner */
+    right: -1px;
+
+    /* Create the green triangle shape */
+    border-style: solid;
+    border-width: 0 0 16px 16px; /* 16px creates a nice size */
+    border-color: transparent transparent var(--accent-green) transparent;
+
+    /* Rotate it slightly to look like the NTA tick */
+    transform: rotate(-45deg);
+    transform-origin: bottom right;
+}
+
+/* Make the button number slightly smaller to ensure it doesn't overlap the tick */
+.index-btn.answered-marked {
+    font-size: 15px;
+}
+/* ========================================================= */
+/* --- NEW: Test Footer Button Spacing Fix --- */
+/* ========================================================= */
+
+#test-mode-footer .footer-row {
+    justify-content: space-between; /* Default for the NTA layout */
+}
+
+/* This is the new, more specific rule for ONLY the FIRST row */
+#test-mode-footer .footer-row:first-of-type {
+    justify-content: center; /* Center the first row of buttons */
+    gap: 15px; /* Add a nice gap between them */
+}
+
+/* Ensure the second row still behaves like the NTA layout */
+#test-mode-footer .footer-row:last-of-type {
+    justify-content: space-between;
+}
+/* ========================================================= */
+/* --- NEW: FIX FOR SUMMARY & ANALYSIS PAGES UI --- */
+/* ========================================================= */
+
+/* Part 1: Fix for the pre-test "Test Summary" Modal */
+#summary-page .summary-box {
+    background: var(--dark-surface);
+    padding: 30px 40px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 600px;
+    border: 1px solid var(--dark-border);
+    color: var(--dark-text-primary);
+}
+#summary-page .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns */
+    gap: 20px;
+    margin: 30px 0;
+    text-align: left;
+}
+#summary-page .summary-card {
+    background-color: var(--dark-surface-light);
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#summary-page .summary-card span {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+#summary-page .summary-warning {
+    margin-bottom: 30px;
+    line-height: 1.5;
+    color: var(--dark-text-secondary);
+}
+
+/* Part 2: Fix for the post-test "Analysis" Summary Page */
+#analysis-page .analysis-main {
+    color: var(--dark-text-primary);
+    padding: 40px;
+}
+#results-view .results-summary {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    align-items: stretch; /* Make cards same height */
+    margin-bottom: 40px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#results-view .score-card {
+    background-color: var(--dark-surface-light);
+    border-radius: 8px;
     padding: 20px;
-    border-top: 1px solid var(--light-border);
-    background-color: #f9f9f9;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
-.analysis-grid {
+#results-view .score-card .score { font-size: 3em; font-weight: bold; }
+#results-view .score-card .score-total { font-size: 1.5em; color: var(--dark-text-secondary); }
+
+#results-view .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 20px;
+    background-color: var(--dark-surface-light);
+    border-radius: 8px;
+    padding: 20px;
 }
-.analysis-item {
-    text-align: center;
+#results-view .stat-item { text-align: center; }
+#results-view .stat-item .value { font-size: 2em; font-weight: 500; margin-bottom: 5px; }
+#results-view .stat-item .value.green { color: var(--accent-green); }
+#results-view .stat-item .value.red { color: var(--accent-red); }
+#results-view .stat-item .value.grey { color: var(--dark-text-secondary); }
+
+#results-view .section-performance {
+    max-width: 900px;
+    margin: 0 auto;
 }
-.analysis-item .label {
-    font-size: 14px;
+#results-view table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    background-color: var(--dark-surface);
+    border-radius: 8px;
+    overflow: hidden; /* Clips content to rounded corners */
+}
+#results-view th, #results-view td {
+    padding: 15px;
+    text-align: left;
+}
+#results-view thead {
+    background-color: var(--dark-surface-light);
+}
+#results-view tbody tr:not(:last-child) {
+    border-bottom: 1px solid var(--dark-border);
+}
+#results-view td.green { color: var(--accent-green); }
+#results-view td.red { color: var(--accent-red); }
+#results-view td.grey { color: var(--dark-text-secondary); }
+/* ========================================================= */
+/* ============================================================= */
+/* --- NUCLEAR OPTION: RIGID LAYOUT FOR ANALYSIS/SOLUTION PAGE --- */
+/* ============================================================= */
+
+/* Force the entire analysis page to be a top-level flex container */
+#analysis-page {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important: prevents the whole page from scrolling */
+}
+
+/* Force the main content area to take all available space */
+#analysis-page .analysis-main {
+    flex: 1 1 auto;
+    overflow: hidden; /* Its children will handle scrolling, not this one */
+}
+
+/* Force the #solution-view itself to be a flex container that fills its parent */
+#solution-view.test-main-content {
+    display: flex;
+    height: 100%; /* MUST be 100% to fill .analysis-main */
+    width: 100%;
+}
+
+/* Now, we target the white question box and its contents */
+#analysis-page #solution-view .question-area {
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Fixes the infinite flex-item sizing bug */
+    flex: 1 1 auto;  /* Make it take up available space in its row */
+}
+
+/* And finally, the scroll container inside the white box */
+#analysis-page #solution-view .question-scroll-container {
+    flex: 1 1 auto;
+    overflow-y: auto; /* The scrollbar now MUST appear */
+}
+/* ============================================================= */
+/* --- FINAL STEP: REBUILDING DECORATIONS for Solution Viewer --- */
+/* ============================================================= */
+
+/* Re-apply the global image size constraint to our solution image */
+#sol-solution-image {
+  max-width: 65%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--light-border);
+  border-radius: 4px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Style the box that holds the answers and mistake notes */
+#per-question-analysis-box {
+    padding: 20px;
+    background-color: #f8f9fa; /* A light grey background */
+    border-top: 1px solid var(--light-border);
+    color: var(--light-text-primary);
+}
+#per-question-analysis-box h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--light-border);
+    padding-bottom: 10px;
+}
+
+/* Style the "Your Answer", "Correct Answer" grid */
+#per-question-analysis-box .analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+#per-question-analysis-box .analysis-item .label {
+    font-size: 13px;
     color: var(--light-text-secondary);
     margin-bottom: 5px;
 }
-.analysis-item .value {
-    font-size: 18px;
-    font-weight: 700;
+#per-question-analysis-box .analysis-item .value {
+    font-size: 16px;
+    font-weight: 500;
 }
 .analysis-item .value.correct { color: var(--accent-green); }
 .analysis-item .value.incorrect { color: var(--accent-red); }
 
-/* Solution Image Style */
-#solution-image-container {
-    margin-top: 20px;
-    padding-top: 20px;
+/* Style the Mistake Notebook form fields */
+#mistake-notebook-container {
+    margin-top: 25px;
     border-top: 1px solid var(--light-border);
+    padding-top: 20px;
 }
-#solution-image-container h3 {
-    font-weight: 700;
+.mistake-form-group {
     margin-bottom: 15px;
-    color: var(--light-text-primary);
-    text-align: center;
 }
-#solution-image-container img {
-    max-width: 100%;
+.mistake-form-group label {
     display: block;
-    margin: 0 auto;
-}
-
-/* --- RESULTS & ANALYSIS DASHBOARD --- */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin: 25px 0;
-}
-.summary-card {
-    background-color: var(--dark-bg);
-    padding: 20px;
-    border-radius: 8px;
-}
-.summary-card p { font-size: 14px; color: var(--dark-text-secondary); }
-.summary-card span { font-size: 24px; font-weight: 700; display: block; margin-top: 5px; }
-
-.results-content, .analysis-dashboard-content {
-    background: var(--dark-surface);
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--dark-border);
-    width: 100%;
-    max-width: 1200px;
-}
-.results-header, .analysis-dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--dark-border);
-}
-.results-header h2, .analysis-dashboard-header h2 { font-size: 24px; }
-.results-actions button, .analysis-dashboard-header button {
-    background-color: var(--accent-blue);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 16px;
-    margin-left: 10px;
-}
-.results-summary {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.score-card {
-    background-color: var(--dark-surface-light);
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-}
-.score-card h3 {
-    font-size: 16px;
+    margin-bottom: 5px;
     font-weight: 500;
-    color: var(--dark-text-secondary);
+    font-size: 14px;
 }
-.score-card .score {
-    font-size: 48px;
-    font-weight: 700;
-    color: var(--accent-blue);
+.mistake-form-group select,
+.mistake-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--light-border);
+    font-size: 14px;
+    font-family: var(--font-family);
+    background-color: white;
 }
-.score-card .score-total {
-    font-size: 24px;
-    color: var(--dark-text-secondary);
+.mistake-form-group textarea {
+    min-height: 80px;
+    resize: vertical;
 }
-.stats-grid {
+/* ============================================================= */
+/* --- FINAL FIX for Solution Viewer Header & Bookmark Button --- */
+/* ============================================================= */
+
+/* Target the header on the solution page specifically */
+#analysis-page #solution-view .question-header {
+    align-items: flex-start; /* Align items to the top */
+}
+
+/* Fix #1: Make the Question number text darker and styled */
+#analysis-page #solution-view .question-header h3 {
+  color: var(--light-text-primary);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Fix #2: Force the bookmark button to be visible and styled */
+#sol-bookmark-btn {
+    display: flex; /* IMPORTANT: This makes the button render */
+    align-items: center;
+    justify-content: center;
+    width: 40px;   /* Give it a defined size */
+    height: 40px;
+    background: none;
+    border: 1px solid var(--light-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+#sol-bookmark-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #ccc;
+}
+
+/* Style the SVG icon inside the button */
+#sol-bookmark-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--light-text-secondary);
+    stroke-width: 2;
+    fill: none;
+}
+
+/* Style for when the button is 'bookmarked' */
+#sol-bookmark-btn.bookmarked {
+    border-color: var(--accent-orange);
+    background-color: #fff8f0;
+}
+#sol-bookmark-btn.bookmarked svg {
+    fill: var(--accent-orange);
+    stroke: var(--accent-orange);
+}
+/* ================================================= */
+/* --- SAFE FIX 1: Spacing for Analysis Filters --- */
+/* ================================================= */
+#analysis-page #analysis-filters {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr; /* This creates the 2x2 grid */
+    gap: 15px;                      /* This adds space between the filters */
+    padding: 20px;                  /* This adds spacious padding AROUND the filters */
+}
+/* ============================================================== */
+/* --- SAFE FIX 2: Tucking Header/Footer in Solution Viewer --- */
+/* ============================================================== */
+
+/* Targets the header inside the solution viewer */
+#analysis-page #solution-view .question-header {
+    padding: 15px 20px; /* Gives the header its own space */
+    border-bottom: 1px solid var(--light-border);
+    flex-shrink: 0; /* Prevents the header from shrinking */
+}
+
+/* Targets the content area that holds the question/solution */
+#analysis-page #solution-view .question-scroll-container {
+    padding: 0 20px; /* Adds side padding so text isn't stuck to the edge */
+}
+
+/* Targets the footer (BACK/NEXT buttons) */
+#analysis-page #solution-view .navigation-footer {
+    padding: 15px 20px; /* Gives the footer its own space */
+    border-top: 1px solid var(--light-border);
+    margin-top: auto;   /* The magic that pushes it to the bottom */
+    flex-shrink: 0; /* Prevents the footer from shrinking */
+}
+/* ============================================================== */
+/* --- SAFE FIX 3: Maximizing Space in Solution Viewer ONLY --- */
+/* ============================================================== */
+
+/* This rule specifically targets the content area on the analysis page */
+#analysis-page .test-main-content {
+    /* Remove the padding to use the full width and height */
+    padding: 0;
+
+    /* Maintain the gap between the question and index panels */
     gap: 15px;
 }
-.stat-item {
-    background-color: var(--dark-bg);
-    padding: 15px;
-    border-radius: 6px;
-    text-align: center;
-}
-.stat-item .value { font-size: 20px; font-weight: 700; }
-.stat-item .label { font-size: 12px; color: var(--dark-text-secondary); margin-top: 5px; }
-.value.green { color: var(--accent-green); }
-.value.red { color: var(--accent-red); }
-.value.grey { color: var(--dark-text-secondary); }
+/* ======================================================== */
+/* --- FINAL & FORCEFUL FIX for Solution Viewer Padding --- */
+/* ======================================================== */
 
-.section-performance table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
+/* This rule specifically targets the main content area of the solution
+   viewer on the analysis page and REMOVES the padding. */
+#analysis-page #solution-view.test-main-content {
+    padding: 0;
 }
-.section-performance th, .section-performance td {
-    padding: 15px;
-    text-align: center;
-    border-bottom: 1px solid var(--dark-border);
+/* ============================================================= */
+/* ---               UI FIX for Bookmarks Page               --- */
+/* ============================================================= */
+
+/* 3a. Arrange filter sidebar into a grid */
+#bookmarks-page .filters-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns */
+    gap: 15px;
+    padding-bottom: 20px;
 }
-.section-performance th {
-    font-weight: 500;
-    color: var(--dark-text-secondary);
-    text-align: left;
+#bookmarks-page .filter-group {
+    display: flex;
+    flex-direction: column;
 }
-.section-performance td {
+
+/* 3b. Give main content area better padding and structure */
+#bookmarks-page .question-area {
+    padding: 0 20px; /* Add horizontal padding */
+}
+#bookmarks-page #bm-per-question-analysis-box {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid var(--light-border);
+}
+#bookmarks-page .navigation-footer {
+    padding: 20px 0;
+}
+
+/* 2. Fix the missing Unbookmark Button */
+#bookmarks-page .question-header {
+    align-items: flex-start;
+}
+#bookmarks-page .question-header-left {
+    justify-content: flex-start;
+}
+#bm-unbookmark-btn {
+    display: flex; /* Make it visible */
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--accent-orange); /* Always bordered since it's a bookmark */
+    background-color: #fff8f0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#bm-unbookmark-btn:hover {
+    background-color: #ffe8d1;
+}
+#bm-unbookmark-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--accent-orange);
+    fill: var(--accent-orange); /* Icon should always be filled */
+}
+/* ============================================================= */
+/* ---             FINAL POLISH for Bookmarks Page           --- */
+/* ============================================================= */
+
+/* 1. Fix the Dashboard button alignment */
+#bookmarks-page .bookmarks-header {
+    display: flex;
+    justify-content: space-between; /* Pushes items to ends */
+    align-items: center;            /* Vertically centers them */
+}
+#bookmarks-page .bookmarks-header .action-btn {
+    flex-shrink: 0; /* Prevents the button from shrinking */
+}
+
+
+/* 2. Fix the "Your Answer" etc. layout */
+#bookmarks-page #bm-per-question-analysis-box .analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+    gap: 15px;
+    margin-bottom: 25px;
+}
+#bookmarks-page #bm-per-question-analysis-box .analysis-item .label {
+    font-size: 13px;
+    color: var(--light-text-secondary);
+    margin-bottom: 5px;
+}
+#bookmarks-page #bm-per-question-analysis-box .analysis-item .value {
     font-size: 16px;
     font-weight: 500;
+}
+#bookmarks-page .analysis-item .value.correct {
+    color: var(--accent-green);
+}
+#bookmarks-page .analysis-item .value.incorrect {
+    color: var(--accent-red);
 }
